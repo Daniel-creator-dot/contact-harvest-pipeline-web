@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ContactData } from '@/types/ContactData';
-import { HarvestService } from '@/services/HarvestService';
-import { Globe, Play, Loader2 } from 'lucide-react';
+import { JobSearchService } from '@/services/JobSearchService';
+import { Search, Play, Loader2 } from 'lucide-react';
 
 interface HarvestFormProps {
   onDataHarvested: (data: ContactData[]) => void;
@@ -17,66 +17,66 @@ interface HarvestFormProps {
 
 export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
   const { toast } = useToast();
-  const [urls, setUrls] = useState('');
-  const [isHarvesting, setIsHarvesting] = useState(false);
+  const [jobTitles, setJobTitles] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [currentUrl, setCurrentUrl] = useState('');
+  const [currentTitle, setCurrentTitle] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!urls.trim()) {
+    if (!jobTitles.trim()) {
       toast({
         title: "Error",
-        description: "Please enter at least one URL to harvest",
+        description: "Please enter at least one job title to search",
         variant: "destructive",
       });
       return;
     }
 
-    const urlList = urls.split('\n').filter(url => url.trim()).map(url => url.trim());
+    const titleList = jobTitles.split('\n').filter(title => title.trim()).map(title => title.trim());
     
-    if (urlList.length === 0) {
+    if (titleList.length === 0) {
       toast({
         title: "Error",
-        description: "Please enter valid URLs",
+        description: "Please enter valid job titles",
         variant: "destructive",
       });
       return;
     }
 
-    setIsHarvesting(true);
+    setIsSearching(true);
     setProgress(0);
     const harvestedData: ContactData[] = [];
 
     try {
-      for (let i = 0; i < urlList.length; i++) {
-        const url = urlList[i];
-        setCurrentUrl(url);
-        setProgress((i / urlList.length) * 100);
+      for (let i = 0; i < titleList.length; i++) {
+        const title = titleList[i];
+        setCurrentTitle(title);
+        setProgress((i / titleList.length) * 100);
 
-        console.log(`Harvesting data from: ${url}`);
+        console.log(`Searching for jobs: ${title}`);
         
         try {
-          const result = await HarvestService.harvestFromUrl(url);
-          if (result.success && result.data) {
-            harvestedData.push(result.data);
+          const results = await JobSearchService.searchJobsByTitle(title);
+          if (results.success && results.data) {
+            harvestedData.push(...results.data);
             toast({
               title: "Success",
-              description: `Successfully harvested data from ${new URL(url).hostname}`,
+              description: `Found ${results.data.length} job postings for "${title}"`,
             });
           } else {
             toast({
               title: "Warning",
-              description: `Failed to harvest from ${url}: ${result.error}`,
+              description: `No jobs found for "${title}": ${results.error}`,
               variant: "destructive",
             });
           }
         } catch (error) {
-          console.error(`Error harvesting ${url}:`, error);
+          console.error(`Error searching for ${title}:`, error);
           toast({
             title: "Error",
-            description: `Failed to process ${url}`,
+            description: `Failed to search for "${title}"`,
             variant: "destructive",
           });
         }
@@ -87,28 +87,28 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
       if (harvestedData.length > 0) {
         onDataHarvested(harvestedData);
         toast({
-          title: "Harvest Complete",
-          description: `Successfully harvested data from ${harvestedData.length} websites`,
+          title: "Search Complete",
+          description: `Successfully found ${harvestedData.length} job postings`,
         });
-        setUrls('');
+        setJobTitles('');
       } else {
         toast({
           title: "No Data",
-          description: "No data was successfully harvested from the provided URLs",
+          description: "No job postings were found for the provided titles",
           variant: "destructive",
         });
       }
 
     } catch (error) {
-      console.error('Harvest process failed:', error);
+      console.error('Job search process failed:', error);
       toast({
         title: "Error",
-        description: "Harvest process failed. Please try again.",
+        description: "Job search process failed. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsHarvesting(false);
-      setCurrentUrl('');
+      setIsSearching(false);
+      setCurrentTitle('');
       setProgress(0);
     }
   };
@@ -117,37 +117,37 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
     <Card className="bg-white shadow-lg border-0">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-gray-800">
-          <Globe className="h-5 w-5 text-blue-600" />
-          Harvest Contact Data
+          <Search className="h-5 w-5 text-blue-600" />
+          Search Job Postings
         </CardTitle>
         <CardDescription>
-          Enter recruiting website URLs to extract emails, contacts, and job postings. One URL per line.
+          Enter job titles to automatically search for job postings and extract contact information. One job title per line.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="urls" className="text-gray-700 font-medium">
-              Website URLs
+            <Label htmlFor="jobTitles" className="text-gray-700 font-medium">
+              Job Titles
             </Label>
             <Textarea
-              id="urls"
-              value={urls}
-              onChange={(e) => setUrls(e.target.value)}
+              id="jobTitles"
+              value={jobTitles}
+              onChange={(e) => setJobTitles(e.target.value)}
               className="min-h-32 resize-none"
-              placeholder="https://jobs.company.com&#10;https://careers.example.com&#10;https://linkedin.com/jobs/..."
-              disabled={isHarvesting}
+              placeholder="Software Engineer&#10;Marketing Manager&#10;Sales Representative&#10;Data Analyst..."
+              disabled={isSearching}
             />
             <div className="text-sm text-gray-500">
-              Supported sites: LinkedIn Jobs, Indeed, company career pages, recruiting sites
+              The system will automatically search for these job titles across major job sites
             </div>
           </div>
 
-          {isHarvesting && (
+          {isSearching && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">
-                  Processing: {currentUrl ? new URL(currentUrl).hostname : 'Preparing...'}
+                  Searching for: {currentTitle || 'Preparing...'}
                 </span>
                 <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
               </div>
@@ -157,31 +157,31 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
 
           <Button
             type="submit"
-            disabled={isHarvesting || !urls.trim()}
+            disabled={isSearching || !jobTitles.trim()}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {isHarvesting ? (
+            {isSearching ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Harvesting Data...
+                Searching Jobs...
               </>
             ) : (
               <>
                 <Play className="mr-2 h-4 w-4" />
-                Start Harvest
+                Start Job Search
               </>
             )}
           </Button>
         </form>
 
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">What we extract:</h4>
+          <h4 className="font-medium text-blue-900 mb-2">What we search for:</h4>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Email addresses from contact forms and pages</li>
-            <li>• Contact information (names, phone numbers, LinkedIn profiles)</li>
-            <li>• Job descriptions and requirements</li>
-            <li>• Company information and job roles</li>
-            <li>• Hiring manager details where available</li>
+            <li>• Job postings on major job sites (LinkedIn, Indeed, etc.)</li>
+            <li>• Company career pages with matching positions</li>
+            <li>• Contact information for hiring managers</li>
+            <li>• Email addresses from job descriptions</li>
+            <li>• Detailed job requirements and descriptions</li>
           </ul>
         </div>
       </CardContent>

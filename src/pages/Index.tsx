@@ -21,10 +21,10 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            Contact Harvest Pipeline
+            Automated Job Harvest Pipeline
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Extract emails, contacts, job descriptions, and roles from recruiting websites with AI-powered precision
+            Search for job titles and automatically extract contact information, job descriptions, and hiring details from across the web
           </p>
         </div>
 
@@ -33,7 +33,7 @@ const Index = () => {
           <Card className="p-6 text-center bg-white shadow-lg border-0">
             <Globe className="h-8 w-8 text-blue-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-800">{harvestedData.length}</div>
-            <div className="text-sm text-gray-600">Sites Scraped</div>
+            <div className="text-sm text-gray-600">Job Sources</div>
           </Card>
           <Card className="p-6 text-center bg-white shadow-lg border-0">
             <Mail className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -62,7 +62,7 @@ const Index = () => {
         <Tabs defaultValue="harvest" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg">
             <TabsTrigger value="harvest" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-              Harvest Data
+              Search Jobs
             </TabsTrigger>
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               Dashboard

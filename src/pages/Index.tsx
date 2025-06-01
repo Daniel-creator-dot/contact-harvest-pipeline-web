@@ -1,11 +1,89 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from 'react';
+import { HarvestForm } from '@/components/HarvestForm';
+import { DataDashboard } from '@/components/DataDashboard';
+import { ApiKeyManager } from '@/components/ApiKeyManager';
+import { ContactData } from '@/types/ContactData';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import { Globe, Mail, Users, FileText } from 'lucide-react';
 
 const Index = () => {
+  const [harvestedData, setHarvestedData] = useState<ContactData[]>([]);
+
+  const handleDataHarvested = (newData: ContactData[]) => {
+    setHarvestedData(prev => [...prev, ...newData]);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">
+            Contact Harvest Pipeline
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Extract emails, contacts, job descriptions, and roles from recruiting websites with AI-powered precision
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="p-6 text-center bg-white shadow-lg border-0">
+            <Globe className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-800">{harvestedData.length}</div>
+            <div className="text-sm text-gray-600">Sites Scraped</div>
+          </Card>
+          <Card className="p-6 text-center bg-white shadow-lg border-0">
+            <Mail className="h-8 w-8 text-green-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-800">
+              {harvestedData.reduce((acc, item) => acc + item.emails.length, 0)}
+            </div>
+            <div className="text-sm text-gray-600">Emails Found</div>
+          </Card>
+          <Card className="p-6 text-center bg-white shadow-lg border-0">
+            <Users className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-800">
+              {harvestedData.reduce((acc, item) => acc + item.contacts.length, 0)}
+            </div>
+            <div className="text-sm text-gray-600">Contacts</div>
+          </Card>
+          <Card className="p-6 text-center bg-white shadow-lg border-0">
+            <FileText className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-gray-800">
+              {harvestedData.reduce((acc, item) => acc + item.jobPostings.length, 0)}
+            </div>
+            <div className="text-sm text-gray-600">Job Postings</div>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <Tabs defaultValue="harvest" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg">
+            <TabsTrigger value="harvest" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Harvest Data
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              API Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="harvest">
+            <HarvestForm onDataHarvested={handleDataHarvested} />
+          </TabsContent>
+
+          <TabsContent value="dashboard">
+            <DataDashboard data={harvestedData} />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <ApiKeyManager />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

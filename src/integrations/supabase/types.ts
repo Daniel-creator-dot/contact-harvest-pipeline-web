@@ -9,7 +9,89 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      harvested_contacts: {
+        Row: {
+          contacts: Json | null
+          domain: string | null
+          emails: string[] | null
+          external_urls: string[] | null
+          id: string
+          job_postings: Json | null
+          job_search_id: string | null
+          page_title: string | null
+          processing_time: number | null
+          redirect_chain: string[] | null
+          scraped_at: string
+          source_url: string
+        }
+        Insert: {
+          contacts?: Json | null
+          domain?: string | null
+          emails?: string[] | null
+          external_urls?: string[] | null
+          id?: string
+          job_postings?: Json | null
+          job_search_id?: string | null
+          page_title?: string | null
+          processing_time?: number | null
+          redirect_chain?: string[] | null
+          scraped_at?: string
+          source_url: string
+        }
+        Update: {
+          contacts?: Json | null
+          domain?: string | null
+          emails?: string[] | null
+          external_urls?: string[] | null
+          id?: string
+          job_postings?: Json | null
+          job_search_id?: string | null
+          page_title?: string | null
+          processing_time?: number | null
+          redirect_chain?: string[] | null
+          scraped_at?: string
+          source_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "harvested_contacts_job_search_id_fkey"
+            columns: ["job_search_id"]
+            isOneToOne: false
+            referencedRelation: "job_searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_searches: {
+        Row: {
+          completed_sources: number | null
+          created_at: string
+          id: string
+          job_titles: string[]
+          status: string
+          total_sources: number | null
+          updated_at: string
+        }
+        Insert: {
+          completed_sources?: number | null
+          created_at?: string
+          id?: string
+          job_titles: string[]
+          status?: string
+          total_sources?: number | null
+          updated_at?: string
+        }
+        Update: {
+          completed_sources?: number | null
+          created_at?: string
+          id?: string
+          job_titles?: string[]
+          status?: string
+          total_sources?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

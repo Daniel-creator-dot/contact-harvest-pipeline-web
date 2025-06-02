@@ -2,25 +2,22 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ContactData } from '@/types/ContactData';
-import { JobSearchService } from '@/services/JobSearchService';
-import { Search, Play, Loader2 } from 'lucide-react';
+import { JobSearchService, JobSearchResponse } from '@/services/JobSearchService';
+import { Search, Play, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
 
 interface HarvestFormProps {
-  onDataHarvested: (data: ContactData[]) => void;
+  onDataHarvested: (data: any) => void;
 }
 
 export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
   const { toast } = useToast();
   const [jobTitles, setJobTitles] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentTitle, setCurrentTitle] = useState('');
+  const [searchResult, setSearchResult] = useState<JobSearchResponse | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,55 +43,28 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
     }
 
     setIsSearching(true);
-    setProgress(0);
-    const harvestedData: ContactData[] = [];
+    setSearchResult(null);
 
     try {
-      for (let i = 0; i < titleList.length; i++) {
-        const title = titleList[i];
-        setCurrentTitle(title);
-        setProgress((i / titleList.length) * 100);
-
-        console.log(`Searching for jobs: ${title}`);
-        
-        try {
-          const results = await JobSearchService.searchJobsByTitle(title);
-          if (results.success && results.data) {
-            harvestedData.push(...results.data);
-            toast({
-              title: "Success",
-              description: `Found ${results.data.length} job postings for "${title}"`,
-            });
-          } else {
-            toast({
-              title: "Warning",
-              description: `No jobs found for "${title}": ${results.error}`,
-              variant: "destructive",
-            });
-          }
-        } catch (error) {
-          console.error(`Error searching for ${title}:`, error);
-          toast({
-            title: "Error",
-            description: `Failed to search for "${title}"`,
-            variant: "destructive",
-          });
-        }
-      }
-
-      setProgress(100);
+      console.log(`Searching for jobs: ${titleList.join(', ')}`);
       
-      if (harvestedData.length > 0) {
-        onDataHarvested(harvestedData);
+      const results = await JobSearchService.searchJobsByTitle(titleList);
+      
+      setSearchResult(results);
+      
+      if (results.success) {
         toast({
-          title: "Search Complete",
-          description: `Successfully found ${harvestedData.length} job postings`,
+          title: "Search Started",
+          description: `Job search initiated for ${titleList.length} job titles. Processing ${results.totalSources} sources...`,
         });
+        
+        // Trigger data refresh in parent component
+        onDataHarvested(results);
         setJobTitles('');
       } else {
         toast({
-          title: "No Data",
-          description: "No job postings were found for the provided titles",
+          title: "Search Failed",
+          description: results.error || "Failed to start job search",
           variant: "destructive",
         });
       }
@@ -108,8 +78,6 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
       });
     } finally {
       setIsSearching(false);
-      setCurrentTitle('');
-      setProgress(0);
     }
   };
 
@@ -121,7 +89,7 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
           Search Job Postings
         </CardTitle>
         <CardDescription>
-          Enter job titles to automatically search for job postings and extract contact information. One job title per line.
+          Enter job titles to automatically search for job postings and extract contact information with deep search. One job title per line.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -139,21 +107,9 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
               disabled={isSearching}
             />
             <div className="text-sm text-gray-500">
-              The system will automatically search for these job titles across major job sites
+              The system will automatically search for these job titles across major job sites with deep link analysis
             </div>
           </div>
-
-          {isSearching && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  Searching for: {currentTitle || 'Preparing...'}
-                </span>
-                <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
-              </div>
-              <Progress value={progress} className="w-full" />
-            </div>
-          )}
 
           <Button
             type="submit"
@@ -174,14 +130,32 @@ export const HarvestForm = ({ onDataHarvested }: HarvestFormProps) => {
           </Button>
         </form>
 
+        {searchResult && searchResult.success && (
+          <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="font-medium text-green-900 mb-2">Search Initiated Successfully!</h4>
+                <div className="text-sm text-green-800 space-y-1">
+                  <p>• Job Search ID: {searchResult.jobSearchId}</p>
+                  <p>• Total Sources: {searchResult.totalSources}</p>
+                  <p>• Status: Processing in background</p>
+                  <p className="font-medium">{searchResult.message}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">What we search for:</h4>
+          <h4 className="font-medium text-blue-900 mb-2">Enhanced Search Features:</h4>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Job postings on major job sites (LinkedIn, Indeed, etc.)</li>
-            <li>• Company career pages with matching positions</li>
+            <li>• Deep search follows external links and redirects</li>
+            <li>• Comprehensive email extraction from linked pages</li>
             <li>• Contact information for hiring managers</li>
-            <li>• Email addresses from job descriptions</li>
             <li>• Detailed job requirements and descriptions</li>
+            <li>• All processing happens securely in the backend</li>
           </ul>
         </div>
       </CardContent>
